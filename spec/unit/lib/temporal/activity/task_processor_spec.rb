@@ -4,7 +4,7 @@ require 'temporal/metric_keys'
 require 'temporal/middleware/chain'
 
 describe Temporal::Activity::TaskProcessor do
-  subject { described_class.new(task, namespace, lookup, middleware_chain, config) }
+  subject { described_class.new(task, namespace, lookup, middleware_chain, config, task_queue) }
 
   let(:namespace) { 'test-namespace' }
   let(:lookup) { instance_double('Temporal::ExecutableLookup', find: nil) }
@@ -20,11 +20,7 @@ describe Temporal::Activity::TaskProcessor do
   let(:activity_name) { 'TestActivity' }
   let(:connection) { instance_double('Temporal::Connection::GRPC') }
   let(:middleware_chain) { Temporal::Middleware::Chain.new }
-  let(:config) { 
-    Temporal::Configuration.new.tap do |config|
-      config.task_queue = task_queue
-    end
-  }
+  let(:config) { Temporal::Configuration.new }
   let(:input) { %w[arg1 arg2] }
   let(:task_queue) { 'test-task-queue' }
 

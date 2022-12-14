@@ -109,7 +109,7 @@ describe Temporal::Activity::Poller do
 
         expect(Temporal::Activity::TaskProcessor)
           .to have_received(:new)
-          .with(task, namespace, lookup, middleware_chain, config)
+          .with(task, namespace, lookup, middleware_chain, config, task_queue)
         expect(task_processor).to have_received(:process)
       end
 
@@ -150,7 +150,7 @@ describe Temporal::Activity::Poller do
           expect(Temporal::Middleware::Chain).to have_received(:new).with(middleware)
           expect(Temporal::Activity::TaskProcessor)
             .to have_received(:new)
-            .with(task, namespace, lookup, middleware_chain, config)
+            .with(task, namespace, lookup, middleware_chain, config, task_queue)
         end
       end
     end

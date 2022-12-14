@@ -96,7 +96,7 @@ module Temporal
       def process(task)
         middleware_chain = Middleware::Chain.new(middleware)
 
-        TaskProcessor.new(task, namespace, activity_lookup, middleware_chain, config).process
+        TaskProcessor.new(task, namespace, activity_lookup, middleware_chain, config, task_queue).process
       end
 
       def thread_pool

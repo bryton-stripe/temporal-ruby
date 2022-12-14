@@ -24,7 +24,7 @@ module Temporal
       MAX_FAILED_ATTEMPTS = 1
       LEGACY_QUERY_KEY = :legacy_query
 
-      def initialize(task, namespace, workflow_lookup, middleware_chain, config, binary_checksum)
+      def initialize(task, namespace, workflow_lookup, middleware_chain, config, binary_checksum, task_queue)
         @task = task
         @namespace = namespace
         @metadata = Metadata.generate_workflow_task_metadata(task, namespace)
@@ -34,13 +34,14 @@ module Temporal
         @middleware_chain = middleware_chain
         @config = config
         @binary_checksum = binary_checksum
+        @task_queue = task_queue
       end
 
       def process
         start_time = Time.now
 
         Temporal.logger.debug("Processing Workflow task", metadata.to_h)
-        Temporal.metrics.timing(Temporal::MetricKeys::WORKFLOW_TASK_QUEUE_TIME, queue_time_ms, workflow: workflow_name, namespace: namespace, task_queue: config.task_queue)
+        Temporal.metrics.timing(Temporal::MetricKeys::WORKFLOW_TASK_QUEUE_TIME, queue_time_ms, workflow: workflow_name, namespace: namespace, task_queue: task_queue)
 
         if !workflow_class
           raise Temporal::WorkflowNotRegistered, 'Workflow is not registered with this worker'
@@ -79,7 +80,7 @@ module Temporal
       private
 
       attr_reader :task, :namespace, :task_token, :workflow_name, :workflow_class,
-        :middleware_chain, :metadata, :config, :binary_checksum
+        :middleware_chain, :metadata, :config, :binary_checksum, :task_queue
 
       def connection
         @connection ||= Temporal::Connection.generate(config.for_connection)
@@ -156,7 +157,7 @@ module Temporal
       end
 
       def fail_task(error)
-        Temporal.metrics.increment(Temporal::MetricKeys::WORKFLOW_TASK_EXECUTION_FAILED, workflow: workflow_name, namespace: namespace, task_queue: config.task_queue)
+        Temporal.metrics.increment(Temporal::MetricKeys::WORKFLOW_TASK_EXECUTION_FAILED, workflow: workflow_name, namespace: namespace, task_queue: task_queue)
         Temporal.logger.error('Workflow task failed', metadata.to_h.merge(error: error.inspect))
         Temporal.logger.debug(error.backtrace.join("\n"))
 

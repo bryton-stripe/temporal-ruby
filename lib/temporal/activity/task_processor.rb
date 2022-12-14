@@ -12,7 +12,7 @@ module Temporal
     class TaskProcessor
       include Concerns::Payloads
 
-      def initialize(task, namespace, activity_lookup, middleware_chain, config)
+      def initialize(task, namespace, activity_lookup, middleware_chain, config, task_queue)
         @task = task
         @namespace = namespace
         @metadata = Metadata.generate_activity_metadata(task, namespace)
@@ -21,13 +21,14 @@ module Temporal
         @activity_class = activity_lookup.find(activity_name)
         @middleware_chain = middleware_chain
         @config = config
+        @task_queue = task_queue
       end
 
       def process
         start_time = Time.now
 
         Temporal.logger.debug("Processing Activity task", metadata.to_h)
-        Temporal.metrics.timing(Temporal::MetricKeys::ACTIVITY_TASK_QUEUE_TIME, queue_time_ms, activity: activity_name, namespace: namespace, workflow: metadata.workflow_name, task_queue: config.task_queue)
+        Temporal.metrics.timing(Temporal::MetricKeys::ACTIVITY_TASK_QUEUE_TIME, queue_time_ms, activity: activity_name, namespace: namespace, workflow: metadata.workflow_name, task_queue: task_queue)
 
         context = Activity::Context.new(connection, metadata)
 
@@ -54,7 +55,7 @@ module Temporal
       private
 
       attr_reader :task, :namespace, :task_token, :activity_name, :activity_class,
-      :middleware_chain, :metadata, :config
+      :middleware_chain, :metadata, :config, :task_queue
 
       def connection
         @connection ||= Temporal::Connection.generate(config.for_connection)
